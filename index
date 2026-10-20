@@ -86,7 +86,7 @@ const seg=(t,a,b)=>ease((t-a)/(b-a));
 
 const lines=[
  ['Chúc mừng 20/10','Ngày Phụ nữ Việt Nam'],
- ['Chúc Quỳnh luôn vui vẻ','xinh xắn, rạng rỡ.'],
+ ['Chúc Như Mãi luôn vui vẻ','xinh xắn, rạng rỡ.'],
  ['Công việc thuận lợi','gửi tặng em những điều tốt đẹp nhất.'],
  ['Mỗi ngày trôi qua sẽ luôn.','mang đến cho em những niềm vui và năng lượng tích cực'],
 ];
