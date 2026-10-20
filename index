@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Chúc mừng 20/10</title>
+<style>
+:root{--ink:#f4efe2;--glow:#ffe9a8;--night:#050b24;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html,body{height:100%;margin:0;background:var(--night);color:var(--ink);overflow:hidden;font-family:"Be Vietnam Pro","Segoe UI",system-ui,sans-serif}
+canvas{position:fixed;inset:0;width:100%;height:100%;display:block}
+#msg{position:fixed;left:0;right:0;top:9%;padding:0 24px;text-align:center;font-family:"Playfair Display",Georgia,"Times New Roman",serif;font-style:italic;font-size:clamp(22px,6.4vw,40px);line-height:1.35;text-shadow:0 0 18px rgba(255,233,168,.55);opacity:0;transition:opacity 1.4s}
+#msg.on{opacity:1}
+#msg small{display:block;margin-top:10px;font:400 clamp(13px,3.6vw,16px)/1.5 "Be Vietnam Pro","Segoe UI",sans-serif;font-style:normal;opacity:.8}
+#bar{position:fixed;left:0;right:0;bottom:calc(14px + env(safe-area-inset-bottom,0px));display:flex;gap:10px;justify-content:center;z-index:2}
+button{font:500 14px "Be Vietnam Pro","Segoe UI",sans-serif;color:var(--ink);background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.3);border-radius:999px;padding:10px 18px;backdrop-filter:blur(6px);cursor:pointer}
+button:focus-visible{outline:2px solid var(--glow);outline-offset:2px}
+#mus{position:fixed;right:0;bottom:0;width:200px;height:200px;opacity:.01;pointer-events:none;overflow:hidden}
+#mus iframe{width:100%;height:100%;border:0}
+
+/* Bảng thông báo mở thiệp khi quét QR */
+#overlay{position:fixed;inset:0;background:rgba(5,11,36,.95);display:flex;align-items:center;justify-content:center;z-index:999;transition:opacity .5s ease}
+.card-box{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.2);padding:30px 24px;border-radius:20px;text-align:center;backdrop-filter:blur(10px);max-width:300px;width:90%}
+.card-box h2{margin-top:0;font-family:"Playfair Display",Georgia,serif;color:var(--glow);font-size:24px}
+.card-box p{font-size:14px;line-height:1.5;margin-bottom:20px;color:var(--ink);opacity:.9}
+.card-box button{background:var(--glow);color:var(--night);font-weight:600;border:none;padding:12px 24px;font-size:16px;border-radius:999px;width:100%;box-shadow:0 0 15px rgba(255,233,168,.4)}
+</style>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500&family=Playfair+Display:ital@1&display=swap">
+</head>
+<body>
+
+<div id="overlay">
+  <div class="card-box">
+    <h2>💌 Chúc Mừng 20/10 💌</h2>
+    <p>Bạn có một món quà đặc biệt đang chờ.</p>
+    <button id="open-btn">Mở Thiệp ❤️</button>
+  </div>
+</div>
+
+<canvas id="c" aria-label=""></canvas>
+<div id="msg" role="status"></div>
+<div id="bar"><button id="replay">Xem lại</button></div>
+<div id="mus"></div>
+
+<script>
+const cv=document.getElementById('c'),x=cv.getContext('2d'),msg=document.getElementById('msg');
+let W,H,D;
+function size(){D=Math.min(devicePixelRatio||1,2);W=innerWidth;H=innerHeight;cv.width=W*D;cv.height=H*D;x.setTransform(D,0,0,D,0,0)}
+addEventListener('resize',size);size();
+const rnd=(a,b)=>a+Math.random()*(b-a);
+const stars=Array.from({length:90},()=>({x:Math.random(),y:Math.random()*.6,r:rnd(.4,1.4),p:rnd(0,6)}));
+const flies=Array.from({length:34},()=>({x:Math.random(),y:rnd(.45,.95),r:rnd(1.5,3),p:rnd(0,6),s:rnd(.2,.6)}));
+/* ===== Sao băng ===== */
+const meteors=[];
+let nextMeteor=0,lastNow=0;
+const calm=matchMedia('(prefers-reduced-motion: reduce)').matches;
+function spawnMeteor(){
+  const ang=rnd(.45,.75),sp=rnd(520,860);
+  meteors.push({x:rnd(W*.25,W*1.05),y:rnd(-20,H*.3),vx:-Math.cos(ang)*sp,vy:Math.sin(ang)*sp,len:rnd(110,210),life:rnd(.9,1.5),age:0});
+}
+function drawMeteors(now){
+  const dt=Math.min(.05,(now-lastNow)/1000||0);lastNow=now;
+  if(!calm&&now>nextMeteor){
+    spawnMeteor();
+    if(Math.random()<.25)setTimeout(spawnMeteor,rnd(150,400)); // thỉnh thoảng có đôi
+    nextMeteor=now+rnd(2500,6000);
+  }
+  for(let i=meteors.length-1;i>=0;i--){
+    const m=meteors[i];m.age+=dt;m.x+=m.vx*dt;m.y+=m.vy*dt;
+    const p=m.age/m.life;
+    if(p>=1){meteors.splice(i,1);continue}
+    const a=Math.sin(Math.PI*p),sp=Math.hypot(m.vx,m.vy);
+    const tx=m.x-m.vx/sp*m.len,ty=m.y-m.vy/sp*m.len;
+    const g=x.createLinearGradient(m.x,m.y,tx,ty);
+    g.addColorStop(0,'rgba(255,255,255,'+a+')');
+    g.addColorStop(.3,'rgba(255,240,190,'+a*.5+')');
+    g.addColorStop(1,'rgba(255,240,190,0)');
+    x.strokeStyle=g;x.lineWidth=2;x.lineCap='round';
+    x.beginPath();x.moveTo(m.x,m.y);x.lineTo(tx,ty);x.stroke();
+    const hg=x.createRadialGradient(m.x,m.y,0,m.x,m.y,9);
+    hg.addColorStop(0,'rgba(255,255,255,'+a+')');hg.addColorStop(1,'rgba(255,255,255,0)');
+    x.fillStyle=hg;x.beginPath();x.arc(m.x,m.y,9,0,7);x.fill();
+  }
+}
+const ease=t=>t<0?0:t>1?1:t*t*(3-2*t);
+const seg=(t,a,b)=>ease((t-a)/(b-a));
+
+const lines=[
+ ['Chúc mừng 20/10','Ngày Phụ nữ Việt Nam'],
+ ['Chúc Quỳnh luôn vui vẻ','xinh xắn, rạng rỡ.'],
+ ['Công việc thuận lợi','gửi tặng em những điều tốt đẹp nhất.'],
+ ['Mỗi ngày trôi qua sẽ luôn.','mang đến cho em những niềm vui và năng lượng tích cực'],
+];
+let t0=performance.now(),shown=-1;
+function say(i){
+  msg.classList.remove('on');
+  setTimeout(()=>{msg.innerHTML=lines[i][0]+'<small>'+lines[i][1]+'</small>';msg.classList.add('on')},700);
+}
+
+function petal(cx,cy,ang,L,Wd,fill,stroke){
+  x.save();x.translate(cx,cy);x.rotate(ang);
+  x.beginPath();x.moveTo(0,0);
+  x.bezierCurveTo(Wd,-L*.25,Wd*.8,-L*.8,0,-L);
+  x.bezierCurveTo(-Wd*.8,-L*.8,-Wd,-L*.25,0,0);
+  x.fillStyle=fill;x.fill();
+  if(stroke){x.strokeStyle=stroke;x.lineWidth=.8;x.stroke()}
+  x.restore();
+}
+function leaf(x0,y0,dir,len,g){
+  if(g<=0)return;
+  x.save();x.translate(x0,y0);x.scale(dir,1);
+  const l=len*g;
+  x.beginPath();x.moveTo(0,0);
+  x.bezierCurveTo(l*.3,-l*.5,l*.8,-l*.35,l,-l*.7);
+  x.bezierCurveTo(l*.75,-l*.1,l*.35,l*.05,0,0);
+  const gr=x.createLinearGradient(0,0,l,-l*.7);gr.addColorStop(0,'#1d6b45');gr.addColorStop(1,'#6fcf8a');
+  x.fillStyle=gr;x.fill();
+  x.strokeStyle='rgba(200,255,210,.35)';x.lineWidth=1;x.beginPath();x.moveTo(0,0);x.quadraticCurveTo(l*.5,-l*.3,l,-l*.7);x.stroke();
+  x.restore();
+}
+
+const sm=t=>{t=Math.max(0,Math.min(1,t));return t*t*t*(t*(t*6-15)+10)};
+const wrap=a=>{while(a>Math.PI)a-=2*Math.PI;while(a<=-Math.PI)a+=2*Math.PI;return a};
+
+function flower2(cx,cy,R,T,grow){
+  const p=(T-5)/13;
+  const sz=R*(.5+.5*sm(p/.9))*Math.min(1,grow*1.2);
+  const ga=.6*sm((p-.3)/.7)*grow;
+  const g=x.createRadialGradient(cx,cy,0,cx,cy,sz*2.6);
+  g.addColorStop(0,'rgba(255,244,200,'+ga+')');g.addColorStop(1,'rgba(255,244,200,0)');
+  x.fillStyle=g;x.beginPath();x.arc(cx,cy,sz*2.6,0,7);x.fill();
+  const sw=Math.sin(T*.8)*.015+Math.sin(T*1.7)*.006;
+  const edge='rgba(220,190,150,.4)';
+  const layers=[[22,1.05,.07,'rgba(240,190,140,.95)',0,null],[18,.92,.2,'#f7f2e6',.07,edge],[16,.78,.17,'#fffaf0',.14,edge],[14,.6,.15,'#ffffff',.21,edge],[10,.42,.13,'#fffdf6',.28,edge]];
+  layers.forEach(([n,len,w,col,dl,st],k)=>{
+    const s=sm((p-dl)/.62);
+    const spread=.05+.95*s;
+    const L=sz*len*(1.2-.2*s),Wd=sz*w*(.75+.25*s)*(1+.5*(1-s)*(k>0));
+    for(let i=0;i<n;i++){
+      const a=wrap((i/n)*Math.PI*2+k*.2)*spread+sw;
+      petal(cx,cy,a,L,Wd,col,st);
+    }
+  });
+  const sa=sm((p-.5)/.5);
+  if(sa>0){
+    x.globalAlpha=sa;x.strokeStyle='rgba(255,214,110,.95)';x.fillStyle='#ffd46b';x.lineWidth=1;
+    for(let i=0;i<46;i++){
+      const a=i*2.4+sw,l=sz*(.14+.12*((i*7)%5)/5)*sa;
+      const ex=cx+Math.cos(a)*l,ey=cy+Math.sin(a)*l;
+      x.beginPath();x.moveTo(cx,cy);x.lineTo(ex,ey);x.stroke();
+      x.beginPath();x.arc(ex,ey,1.6,0,7);x.fill();
+    }
+    x.globalAlpha=1;
+  }
+}
+function frame(now){
+  const T=(now-t0)/1000;
+  const sky=x.createLinearGradient(0,0,0,H);
+  sky.addColorStop(0,'#050b24');sky.addColorStop(.6,'#0b2352');sky.addColorStop(1,'#12406e');
+  x.fillStyle=sky;x.fillRect(0,0,W,H);
+  stars.forEach(s=>{x.fillStyle='rgba(255,255,255,'+(.35+.4*Math.sin(T*1.5+s.p))+')';x.beginPath();x.arc(s.x*W,s.y*H,s.r,0,7);x.fill()});
+  drawMeteors(now);
+  const mg=x.createRadialGradient(W*.8,H*.17,0,W*.8,H*.17,70);
+  mg.addColorStop(0,'rgba(255,250,225,.9)');mg.addColorStop(.25,'rgba(255,245,200,.35)');mg.addColorStop(1,'rgba(255,245,200,0)');
+  x.fillStyle=mg;x.beginPath();x.arc(W*.8,H*.17,70,0,7);x.fill();
+  [[.78,'#0d2d5c',.0035,0],[.84,'#0a2349',.005,2],[.91,'#071a38',.007,5]].forEach(([y,c,f,p])=>{
+    x.fillStyle=c;x.beginPath();x.moveTo(0,H);
+    for(let i=0;i<=W;i+=8)x.lineTo(i,H*y+Math.sin(i*f+p)*H*.025);
+    x.lineTo(W,H);x.fill();
+  });
+  const cx=W/2,base=H*.9,R=Math.min(W,H*.62)*.3,top=H*.56;
+  const grow=seg(T,1,5);
+  const sway=Math.sin(T*.8)*4;
+  const ty=base-(base-top)*grow;
+  x.strokeStyle='#2f9a5e';x.lineWidth=5;x.lineCap='round';
+  x.beginPath();x.moveTo(cx,base);x.quadraticCurveTo(cx-14+sway,(base+ty)/2,cx+sway,ty);x.stroke();
+  leaf(cx-4,base-(base-top)*.15*grow,-1,R*1.5,seg(T,2,6));
+  leaf(cx+4,base-(base-top)*.3*grow,1,R*1.7,seg(T,2.6,6.6));
+  leaf(cx-2,base-(base-top)*.55*grow,-1,R*1.2,seg(T,3.4,7));
+  if(grow>.05){flower2(cx+sway,ty-R*.05,R,T,grow);}
+  flies.forEach(f=>{
+    const px=((f.x+Math.sin(T*f.s+f.p)*.04)%1)*W,py=(f.y+Math.cos(T*f.s*1.3+f.p)*.03)*H;
+    const a=.5+.5*Math.sin(T*2+f.p);
+    const fg=x.createRadialGradient(px,py,0,px,py,f.r*5);
+    fg.addColorStop(0,'rgba(215,255,150,'+a+')');fg.addColorStop(1,'rgba(215,255,150,0)');
+    x.fillStyle=fg;x.beginPath();x.arc(px,py,f.r*5,0,7);x.fill();
+  });
+  const idx=T<2?-1:Math.min(lines.length-1,Math.floor((T-2)/5.5));
+  if(idx!==shown&&idx>=0){shown=idx;say(idx)}
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+
+/* ================= NHẠC NỀN: Tặng em đoá hoa hồng - luôn bật, bắt đầu từ giây 13, hết bài thì lặp lại từ giây 13 ================= */
+const mus=document.getElementById('mus'),VID='jq2pn8b6q-A';
+const START_AT=13; // nhạc bắt đầu từ giây 13
+
+mus.innerHTML='<iframe id="yt" src="https://www.youtube.com/embed/'+VID+'?autoplay=1&mute=1&start='+START_AT+'&playsinline=1&controls=0&enablejsapi=1" title="Tặng em đoá hoa hồng - Dacol ft. Wang An Nan" allow="autoplay; encrypted-media" referrerpolicy="strict-origin-when-cross-origin"></iframe>';
+const yt=document.getElementById('yt');
+const cmd=(f,args=[])=>{try{yt.contentWindow.postMessage(JSON.stringify({event:'command',func:f,args:args}),'*')}catch(e){}};
+
+// Phát có tiếng, từ giây 13; gửi lệnh vài lần để chắc chắn trình phát đã nhận
+function startMusic(){
+  const go=()=>{cmd('seekTo',[START_AT,true]);cmd('setVolume',[100]);cmd('unMute');cmd('playVideo')};
+  go();setTimeout(go,600);setTimeout(go,1800);
+}
+
+// Hết bài thì phát lại từ giây 13 (loop mặc định của YouTube sẽ quay về 0s)
+yt.addEventListener('load',()=>{try{yt.contentWindow.postMessage(JSON.stringify({event:'listening',id:1}),'*')}catch(e){}});
+let started=false;
+addEventListener('message',e=>{
+  if(!started||typeof e.data!=='string')return;
+  try{const d=JSON.parse(e.data);
+    if(d.event==='onStateChange'&&d.info===0)startMusic();
+  }catch(_){}
+});
+
+const overlay=document.getElementById('overlay');
+const openBtn=document.getElementById('open-btn');
+
+openBtn.addEventListener('click',()=>{
+  overlay.style.opacity='0';
+  setTimeout(()=>overlay.remove(),500);
+
+  t0=performance.now();
+  shown=-1;
+  msg.classList.remove('on');
+
+  started=true;
+  startMusic(); // bấm "Mở Thiệp" là nhạc bật ngay
+});
+
+// Nút "Xem lại": chạy lại hiệu ứng, nhạc vẫn tiếp tục phát
+document.getElementById('replay').addEventListener('click',()=>{
+  t0=performance.now();
+  shown=-1;
+  msg.classList.remove('on');
+});
+</script>
+</body>
+</html>
